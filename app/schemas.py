@@ -2,8 +2,10 @@ from datetime import date , datetime
 from sqlmodel import SQLModel, Field 
 
 class NoteCreate(SQLModel):
+    id : int | None = Field(default=None, primary_key=True)
     title: str
     content: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class NoteRead(SQLModel):
     id: int
@@ -12,6 +14,7 @@ class NoteRead(SQLModel):
     created_at: datetime
 
 class TaskCreate(SQLModel):
+    id : int | None = Field(default=None, primary_key=True)
     text : str
     done : bool = Field(default=False)
     due_date: date | None = None
