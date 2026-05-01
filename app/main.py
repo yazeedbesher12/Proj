@@ -2,8 +2,9 @@ from fastapi import FastAPI, HTTPException
 from sqlmodel import Session, select
 from fastapi import Depends
 
-from db import create_db_and_tables, get_session
-from models import Task, Note
+from app.db import create_db_and_tables, get_session
+from app.models import Task, Note
+from app.schemas import NoteCreate, NoteRead, TaskCreate, TaskRead, NoteUpdate, TaskUpdate
 
 app = FastAPI()
 
@@ -11,39 +12,41 @@ app = FastAPI()
 def on_startup():
     create_db_and_tables()
 
-@app.post("/Notes/", status_code=201)
-def create_note(note: Note, session: Session = Depends(get_session)):
-    session.add(note)
+@app.post("/Notes/", status_code=201,response_model=NoteRead)
+def create_note(note: NoteCreate, session: Session = Depends(get_session)):
+    db_note = Note(title=note.title, content=note.content)
+    session.add(db_note)
     session.commit()
-    session.refresh(note)
-    return note
+    session.refresh(db_note)
+    return db_note
 
-@app.post("/Tasks/",status_code=201)
-def create_task(task: Task, session: Session = Depends(get_session)):
-    session.add(task)
+@app.post("/Tasks/",status_code=201,response_model=TaskRead)
+def create_task(task: TaskCreate, session: Session = Depends(get_session)):
+    db_task = Task(text=task.text, done=task.done, due_date=task.due_date)
+    session.add(db_task)
     session.commit()
-    session.refresh(task)
-    return task
+    session.refresh(db_task)
+    return db_task
 
-@app.get("/Notes/")
+@app.get("/Notes/",response_model=list[NoteRead])
 def read_notes(session: Session = Depends(get_session)):
     notes = session.exec(select(Note)).all()
     return notes
 
-@app.get("/Tasks/")
+@app.get("/Tasks/",response_model=list[TaskRead])
 def read_tasks(session: Session = Depends(get_session)):    
     tasks = session.exec(select(Task)).all()
     return tasks
 
-@app.get("/Notes/{note_id}")
+@app.get("/Notes/{note_id}", response_model=NoteRead)
 def read_note(note_id: int, session: Session = Depends(get_session)):
     note = session.get(Note, note_id)
     if note :
       return note
     raise HTTPException(status_code=404, detail="Note not found")
 
-@app.put("/Notes/{note_id}")
-def update_note(note_id: int, note: Note, session: Session = Depends(get_session)):
+@app.put("/Notes/{note_id}",response_model=NoteRead)
+def update_note(note_id: int, note: NoteUpdate, session: Session = Depends(get_session)):
     existing_note = session.get(Note, note_id)
     if existing_note:
         existing_note.title = note.title
@@ -73,8 +76,8 @@ def delete_task(task_id : int , session : Session = Depends(get_session)):
         return {"message": "Task deleted successfully"}
     raise HTTPException(status_code=404, detail="Task not found")
 
-@app.patch("/Tasks/{task_id}")
-def update_task(task_id : int , task : Task , session : Session = Depends(get_session)):
+@app.patch("/Tasks/{task_id}",response_model=TaskRead)
+def update_task(task_id : int , task : TaskUpdate , session : Session = Depends(get_session)):
     existing_task = session.get(Task,task_id)
     if existing_task:
         existing_task.done = task.done
