@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from sqlmodel import Session, select
 from fastapi import Depends
 
@@ -11,14 +11,14 @@ app = FastAPI()
 def on_startup():
     create_db_and_tables()
 
-@app.post("/Notes/")
+@app.post("/Notes/", status_code=201)
 def create_note(note: Note, session: Session = Depends(get_session)):
     session.add(note)
     session.commit()
     session.refresh(note)
     return note
 
-@app.post("/Tasks/")
+@app.post("/Tasks/",status_code=201)
 def create_task(task: Task, session: Session = Depends(get_session)):
     session.add(task)
     session.commit()
@@ -38,7 +38,9 @@ def read_tasks(session: Session = Depends(get_session)):
 @app.get("/Notes/{note_id}")
 def read_note(note_id: int, session: Session = Depends(get_session)):
     note = session.get(Note, note_id)
-    return note
+    if note :
+      return note
+    raise HTTPException(status_code=404, detail="Note not found")
 
 @app.put("/Notes/{note_id}")
 def update_note(note_id: int, note: Note, session: Session = Depends(get_session)):
@@ -50,7 +52,7 @@ def update_note(note_id: int, note: Note, session: Session = Depends(get_session
         session.commit()
         session.refresh(existing_note)
         return existing_note
-    return None
+    raise HTTPException(status_code=404, detail="Note not found")
 
 @app.delete("/Notes/{note_id}")
 def delete_note(note_id : int , session : Session = Depends(get_session)):
@@ -59,7 +61,7 @@ def delete_note(note_id : int , session : Session = Depends(get_session)):
         session.delete(note)
         session.commit()
         return {"message": "Note deleted successfully"}
-    return {"message": "Note not found"}
+    raise HTTPException(status_code=404, detail="Note not found")
 
 
 @app.delete("/Tasks/{task_id}")
@@ -69,7 +71,7 @@ def delete_task(task_id : int , session : Session = Depends(get_session)):
         session.delete(task)
         session.commit()
         return {"message": "Task deleted successfully"}
-    return {"message": "Task not found"}
+    raise HTTPException(status_code=404, detail="Task not found")
 
 @app.patch("/Tasks/{task_id}")
 def update_task(task_id : int , task : Task , session : Session = Depends(get_session)):
@@ -80,6 +82,6 @@ def update_task(task_id : int , task : Task , session : Session = Depends(get_se
         session.commit()
         session.refresh(existing_task)
         return existing_task
-    return None
+    raise HTTPException(status_code=404, detail="Task not found")
 
 

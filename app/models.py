@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field
-from datetime import date
+from datetime import date, datetime
 
 class Note(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
@@ -11,5 +11,5 @@ class Task(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     text : str
     done : bool = Field(default=False)
-    due_date: date = Field(default=None)
+    due_date: date | None = None
    
